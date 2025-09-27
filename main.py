@@ -2,7 +2,6 @@ import os
 import uuid
 import tempfile
 import requests
-
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +10,7 @@ import replicate  # pip install replicate
 
 app = FastAPI(title="Kuzov Backend")
 
-# Если знаешь фронтовый домен, потом подставь вместо "*"
+# Разрешаем CORS (лучше потом ограничить доменом фронта)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,10 +18,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Токен берём из Render → Environment
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-
-# ВАЖНО: правильная версия модели CodeFormer с твоего скрина
-MODEL_ID = "sczhou/codeformer:cc495cd026fa5a7185d560cc9100fab1b8070a10165a8bb5eb6d443b020bb2"
 
 
 @app.get("/")
@@ -31,39 +28,38 @@ def root():
 
 
 @app.post("/api/restore")
-async def restore(file: UploadFile = File(...)):
+def restore(file: UploadFile = File(...)):
     if not REPLICATE_API_TOKEN:
         raise HTTPException(status_code=500, detail="REPLICATE_API_TOKEN не задан")
 
-    # Сохраняем загруженный файл во временный путь
-    suffix = os.path.splitext(file.filename or "")[1] or ".jpg"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        content = await file.read()
-        tmp.write(content)
-        in_path = tmp.name
+    # Сохраняем входной файл
+    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    in_path = os.path.join(tempfile.gettempdir(), f"in_{uuid.uuid4().hex}{ext}")
+    with open(in_path, "wb") as f:
+        f.write(file.file.read())
 
     try:
-        # Репликейт читает токен из окружения
+        # Указываем токен для Replicate
         os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
 
-        # Запускаем CodeFormer
-        output = replicate.run(
-            MODEL_ID,
+        # 🚀 Вызов модели CodeFormer (актуальная версия)
+        output_urls = replicate.run(
+            "sczhou/codeformer:cc495dc26fa5a718d55d60cc9100fab1b8070a10165a8bb5ebd6443b020bb2",
             input={
                 "image": open(in_path, "rb"),
                 "background_enhance": True,
                 "face_upsample": True,
                 "scale": 2,
-                "codeformer_fidelity": 0.7,
-            },
+                "codeformer_fidelity": 0.7
+            }
         )
 
-        if not output:
+        if not output_urls:
             raise HTTPException(status_code=500, detail="Модель не вернула изображение")
 
-        # Репликейт возвращает URL картинки
-        out_url = output[0] if isinstance(output, list) else output
-        resp = requests.get(out_url, timeout=120)
+        # Скачиваем готовое фото
+        out_url = output_urls[0]
+        resp = requests.get(out_url, timeout=60)
         resp.raise_for_status()
 
         out_path = os.path.join(tempfile.gettempdir(), f"restored_{uuid.uuid4().hex}.png")
@@ -73,15 +69,10 @@ async def restore(file: UploadFile = File(...)):
         return FileResponse(
             out_path,
             media_type="image/png",
-            filename=f"restored_{os.path.basename(file.filename)}.png",
+            filename=f"restored_{os.path.basename(file.filename)}.png"
         )
 
     except requests.RequestException as e:
         raise HTTPException(status_code=502, detail=f"Не удалось скачать результат модели: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка обработки: {e}")
-    finally:
-        try:
-            os.remove(in_path)
-        except Exception:
-            pass
