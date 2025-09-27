@@ -10,19 +10,21 @@ import replicate  # pip install replicate
 
 app = FastAPI(title="Kuzov Backend")
 
-# Если уже знаешь фронтовый домен — подставь сюда, например "https://kuzov-bel.ru"
+# Если уже знаешь фронтовый домен — подставь сюда вместо "*"
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # потом лучше заменить на конкретный домен
+    allow_origins=["*"],  # лучше потом ограничить своим доменом
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
 
+
 @app.get("/")
 def root():
     return {"message": "Backend работает!"}
+
 
 @app.post("/api/restore")
 def restore(file: UploadFile = File(...)):
@@ -36,22 +38,17 @@ def restore(file: UploadFile = File(...)):
         f.write(file.file.read())
 
     try:
-        # Replicate: InstructPix2Pix — редактирование по тексту
-        # Документация: https://replicate.com/timothybrooks/instruct-pix2pix
+        # Replicate: CodeFormer — рабочая модель восстановления изображений
         os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
 
         output_urls = replicate.run(
-            "timothybrooks/instruct-pix2pix:7e9d5a87b76d8ea88b0b43f701d67f4a3d7a6a2d9a52bc2d7d15b2831f4e5d0e",
+            "sczhou/codeformer:6e61e0b8b46e8f2f4a3b8d20c13959a56e30c3d4d54eecfe25c7d5c9f2e5e9c3",
             input={
                 "image": open(in_path, "rb"),
-                "prompt": (
-                    "restore the car to factory condition, remove all dents, "
-                    "scratches and broken parts, keep same color and model, "
-                    "photo-realistic, high details"
-                ),
-                "num_inference_steps": 50,
-                "image_guidance_scale": 1.5,
-                "guidance_scale": 7.0
+                "background_enhance": True,
+                "face_upsample": True,
+                "scale": 2,
+                "codeformer_fidelity": 0.7
             }
         )
 
