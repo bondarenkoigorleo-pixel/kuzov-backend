@@ -3,10 +3,13 @@ import uuid
 import tempfile
 import requests
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 import replicate  # pip install replicate
+
+from routers.store import router as store_router
 
 app = FastAPI(title="Kuzov Backend")
 
@@ -18,6 +21,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Роутер сельского магазина
+app.include_router(store_router)
+
+# Статика
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Токен берём из переменной окружения Render
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
 
@@ -28,6 +37,13 @@ PINNED_VERSION = "cc495dc26fa5a718d55d60cc9100fab1b8070a10165a8bb5ebd6443b020bb2
 
 @app.get("/")
 def root():
+    """Демо-страница сельского магазина."""
+    with open("static/index.html", encoding="utf-8") as f:
+        return HTMLResponse(f.read())
+
+
+@app.get("/health")
+def health():
     return {"message": "Backend работает!"}
 
 

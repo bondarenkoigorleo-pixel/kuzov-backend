@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СелоМаркет — Доставка в село</title>
+<style>
+:root {
+  --green: #2e7d32;
+  --green-light: #4caf50;
+  --green-bg: #e8f5e9;
+  --orange: #ef6c00;
+  --orange-light: #fff3e0;
+  --gray: #f5f5f5;
+  --dark: #212121;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--gray);
+  color: var(--dark);
+  min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────── */
+header {
+  background: linear-gradient(135deg, var(--green), #1b5e20);
+  color: #fff;
+  padding: 16px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+header h1 { font-size: 1.3rem; }
+header small { opacity: .85; font-size: .8rem; }
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cart-btn {
+  background: rgba(255,255,255,.2);
+  border: none;
+  color: #fff;
+  font-size: 1.4rem;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  position: relative;
+  transition: background .2s;
+}
+.cart-btn:hover { background: rgba(255,255,255,.35); }
+.cart-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  background: var(--orange);
+  color: #fff;
+  font-size: .7rem;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* ── Delivery banner ───────────────────────── */
+.delivery-banner {
+  background: var(--orange-light);
+  border-left: 4px solid var(--orange);
+  margin: 12px 16px;
+  padding: 10px 14px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: .85rem;
+}
+.delivery-banner strong { color: var(--orange); }
+
+/* ── Categories ─────────────────────────────── */
+.categories {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+.categories::-webkit-scrollbar { display: none; }
+.cat-chip {
+  white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #ccc;
+  background: #fff;
+  font-size: .85rem;
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.cat-chip.active {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+
+/* ── Product grid ───────────────────────────── */
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 0 16px 100px;
+}
+.product-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  transition: transform .15s;
+}
+.product-card:active { transform: scale(.97); }
+.product-emoji {
+  font-size: 2.5rem;
+  text-align: center;
+  padding: 10px 0;
+}
+.product-name {
+  font-weight: 600;
+  font-size: .9rem;
+  margin-bottom: 4px;
+}
+.product-desc {
+  font-size: .75rem;
+  color: #777;
+  margin-bottom: 8px;
+  flex: 1;
+}
+.product-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.product-price {
+  font-weight: 700;
+  color: var(--green);
+  font-size: 1rem;
+}
+.product-unit {
+  font-size: .75rem;
+  color: #999;
+}
+.add-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--green);
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s;
+}
+.add-btn:hover { background: var(--green-light); }
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qty-controls button {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--green);
+  background: #fff;
+  color: var(--green);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qty-controls span {
+  font-weight: 700;
+  font-size: .95rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Overlay / Cart / Order ─────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 200;
+  display: none;
+}
+.overlay.open { display: block; }
+.panel {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  max-height: 85vh;
+  overflow-y: auto;
+  z-index: 201;
+  transform: translateY(100%);
+  transition: transform .3s ease;
+  padding: 20px 16px 30px;
+}
+.panel.open { transform: translateY(0); }
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.panel-header h2 { font-size: 1.2rem; }
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+}
+
+/* ── Cart items ─────────────────────────────── */
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.cart-item-emoji { font-size: 1.5rem; }
+.cart-item-info { flex: 1; }
+.cart-item-name { font-weight: 600; font-size: .9rem; }
+.cart-item-price { font-size: .8rem; color: #777; }
+.cart-item-total { font-weight: 700; color: var(--green); }
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.cart-total span:last-child { color: var(--green); font-size: 1.3rem; }
+.empty-cart {
+  text-align: center;
+  padding: 30px 0;
+  color: #999;
+}
+.empty-cart .big-emoji { font-size: 3rem; }
+
+/* ── Order form ─────────────────────────────── */
+.order-form { display: flex; flex-direction: column; gap: 12px; }
+.order-form label {
+  font-size: .85rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.order-form input,
+.order-form select,
+.order-form textarea {
+  padding: 12px;
+  border: 1.5px solid #ddd;
+  border-radius: var(--radius);
+  font-size: .95rem;
+  font-family: inherit;
+  width: 100%;
+  transition: border-color .2s;
+}
+.order-form input:focus,
+.order-form select:focus,
+.order-form textarea:focus {
+  outline: none;
+  border-color: var(--green);
+}
+
+/* ── Buttons ────────────────────────────────── */
+.primary-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--green);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s;
+}
+.primary-btn:hover { background: var(--green-light); }
+.primary-btn:disabled {
+  background: #ccc;
+  cursor: default;
+}
+.secondary-btn {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--green);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--green);
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* ── Success ────────────────────────────────── */
+.success-panel {
+  text-align: center;
+  padding: 20px 0;
+}
+.success-panel .big-emoji { font-size: 4rem; margin-bottom: 12px; }
+.success-panel h2 { color: var(--green); margin-bottom: 8px; }
+.order-info-box {
+  background: var(--green-bg);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin: 16px 0;
+  text-align: left;
+  font-size: .9rem;
+}
+.order-info-box p { margin: 6px 0; }
+.order-info-box strong { color: var(--green); }
+
+/* ── Status tracker ─────────────────────────── */
+.status-track {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+  position: relative;
+}
+.status-track::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: #ddd;
+}
+.status-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+  font-size: .7rem;
+  color: #999;
+  gap: 6px;
+}
+.status-dot {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+}
+.status-step.active .status-dot {
+  background: var(--green);
+}
+.status-step.active { color: var(--green); font-weight: 600; }
+
+/* ── Search ─────────────────────────────────── */
+.search-box {
+  margin: 0 16px 8px;
+  position: relative;
+}
+.search-box input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1.5px solid #ddd;
+  border-radius: var(--radius);
+  font-size: .9rem;
+  background: #fff;
+}
+.search-box input:focus {
+  outline: none;
+  border-color: var(--green);
+}
+.search-box::before {
+  content: '🔍';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .9rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────── -->
+<header>
+  <div class="header-row">
+    <div>
+      <h1>СелоМаркет</h1>
+      <small>Доставка продуктов в ваше село</small>
+    </div>
+    <button class="cart-btn" onclick="openCart()">
+      🛒
+      <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- ── Delivery info ───────────────────────────── -->
+<div class="delivery-banner">
+  <strong>🚚 Доставка:</strong> ежедневно с 10:00 до 18:00 &bull; бесплатно от 500 ₽ &bull; иначе 150 ₽
+</div>
+
+<!-- ── Search ───────────────────────────────────── -->
+<div class="search-box">
+  <input type="text" id="searchInput" placeholder="Найти товар..." oninput="filterProducts()">
+</div>
+
+<!-- ── Categories ───────────────────────────────── -->
+<div class="categories" id="categories"></div>
+
+<!-- ── Products grid ───────────────────────────── -->
+<div class="products" id="productsGrid"></div>
+
+<!-- ── Cart overlay ─────────────────────────────── -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- ── Cart panel ───────────────────────────────── -->
+<div class="panel" id="cartPanel">
+  <div class="panel-header">
+    <h2>🛒 Корзина</h2>
+    <button class="close-btn" onclick="closePanel()">&times;</button>
+  </div>
+  <div id="cartContent"></div>
+</div>
+
+<!-- ── Order form panel ─────────────────────────── -->
+<div class="panel" id="orderPanel">
+  <div class="panel-header">
+    <h2>📋 Оформление заказа</h2>
+    <button class="close-btn" onclick="closePanel()">&times;</button>
+  </div>
+  <div class="order-form" id="orderForm">
+    <div>
+      <label>Имя</label>
+      <input type="text" id="fName" placeholder="Иван Петрович">
+    </div>
+    <div>
+      <label>Телефон</label>
+      <input type="tel" id="fPhone" placeholder="+7 900 123-45-67">
+    </div>
+    <div>
+      <label>Село / деревня</label>
+      <select id="fVillage">
+        <option value="">Выберите населённый пункт</option>
+        <option>с. Берёзовка</option>
+        <option>д. Сосновка</option>
+        <option>с. Луговое</option>
+        <option>д. Речная</option>
+        <option>с. Ольховка</option>
+        <option>п. Зелёный Бор</option>
+        <option>д. Подгорная</option>
+        <option>с. Кузнецово</option>
+      </select>
+    </div>
+    <div>
+      <label>Адрес (улица, дом)</label>
+      <input type="text" id="fAddress" placeholder="ул. Центральная, д. 5">
+    </div>
+    <div>
+      <label>Комментарий</label>
+      <textarea id="fComment" rows="2" placeholder="Позвоните заранее..."></textarea>
+    </div>
+    <button class="primary-btn" onclick="submitOrder()">Отправить заказ</button>
+    <button class="secondary-btn" onclick="backToCart()">← Назад к корзине</button>
+  </div>
+</div>
+
+<!-- ── Success panel ────────────────────────────── -->
+<div class="panel" id="successPanel">
+  <div class="success-panel" id="successContent"></div>
+</div>
+
+<script>
+const API = '/api/store';
+let products = [];
+let cart = {}; // { product_id: quantity }
+let activeCategory = null;
+
+// ── Load data ──────────────────────────────────
+async function loadProducts() {
+  const res = await fetch(`${API}/products`);
+  products = await res.json();
+  renderProducts();
+}
+
+async function loadCategories() {
+  const res = await fetch(`${API}/categories`);
+  const cats = await res.json();
+  const el = document.getElementById('categories');
+  el.innerHTML = `<div class="cat-chip active" onclick="selectCategory(null, this)">Все</div>` +
+    cats.map(c => `<div class="cat-chip" onclick="selectCategory('${c.value}', this)">${catEmoji(c.value)} ${c.label}</div>`).join('');
+}
+
+function catEmoji(v) {
+  const m = {bread:'🍞',dairy:'🥛',grocery:'🌾',meat:'🍗',vegetables:'🥬',drinks:'🍵',household:'🧹',other:'📦'};
+  return m[v]||'📦';
+}
+
+// ── Category filter ────────────────────────────
+function selectCategory(cat, chip) {
+  activeCategory = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  renderProducts();
+}
+
+// ── Search ─────────────────────────────────────
+function filterProducts() {
+  renderProducts();
+}
+
+// ── Render products ────────────────────────────
+function renderProducts() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const grid = document.getElementById('productsGrid');
+  let items = products;
+  if (activeCategory) items = items.filter(p => p.category === activeCategory);
+  if (search) items = items.filter(p => p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search));
+
+  grid.innerHTML = items.map(p => {
+    const qty = cart[p.id] || 0;
+    return `
+    <div class="product-card">
+      <div class="product-emoji">${p.image}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-desc">${p.description}</div>
+      <div class="product-bottom">
+        <div>
+          <div class="product-price">${p.price} ₽</div>
+          <div class="product-unit">за ${p.unit}</div>
+        </div>
+        ${qty === 0
+          ? `<button class="add-btn" onclick="addToCart('${p.id}')">+</button>`
+          : `<div class="qty-controls">
+               <button onclick="changeQty('${p.id}', -1)">−</button>
+               <span>${qty}</span>
+               <button onclick="changeQty('${p.id}', 1)">+</button>
+             </div>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Cart logic ─────────────────────────────────
+function addToCart(id) {
+  cart[id] = (cart[id] || 0) + 1;
+  updateBadge();
+  renderProducts();
+}
+
+function changeQty(id, delta) {
+  cart[id] = (cart[id] || 0) + delta;
+  if (cart[id] <= 0) delete cart[id];
+  updateBadge();
+  renderProducts();
+  if (document.getElementById('cartPanel').classList.contains('open')) renderCart();
+}
+
+function updateBadge() {
+  const total = Object.values(cart).reduce((a, b) => a + b, 0);
+  const badge = document.getElementById('cartBadge');
+  badge.textContent = total;
+  badge.style.display = total > 0 ? 'flex' : 'none';
+}
+
+function cartTotal() {
+  let sum = 0;
+  for (const [id, qty] of Object.entries(cart)) {
+    const p = products.find(x => x.id === id);
+    if (p) sum += p.price * qty;
+  }
+  return sum;
+}
+
+function deliveryFee() {
+  return cartTotal() >= 500 ? 0 : 150;
+}
+
+// ── Cart panel ─────────────────────────────────
+function openCart() {
+  renderCart();
+  openPanel('cartPanel');
+}
+
+function renderCart() {
+  const el = document.getElementById('cartContent');
+  const ids = Object.keys(cart);
+  if (!ids.length) {
+    el.innerHTML = `<div class="empty-cart"><div class="big-emoji">🛒</div><p>Корзина пуста</p><p style="font-size:.85rem;margin-top:8px">Добавьте товары из каталога</p></div>`;
+    return;
+  }
+
+  let html = '';
+  for (const id of ids) {
+    const p = products.find(x => x.id === id);
+    if (!p) continue;
+    const qty = cart[id];
+    html += `
+    <div class="cart-item">
+      <div class="cart-item-emoji">${p.image}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${p.name}</div>
+        <div class="cart-item-price">${p.price} ₽ × ${qty}</div>
+      </div>
+      <div class="qty-controls">
+        <button onclick="changeQty('${p.id}', -1)">−</button>
+        <span>${qty}</span>
+        <button onclick="changeQty('${p.id}', 1)">+</button>
+      </div>
+      <div class="cart-item-total">${p.price * qty} ₽</div>
+    </div>`;
+  }
+
+  const fee = deliveryFee();
+  html += `
+    <div class="cart-total">
+      <span>Товары:</span><span>${cartTotal()} ₽</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:.9rem;color:#777;margin-bottom:4px">
+      <span>Доставка:</span><span>${fee === 0 ? 'Бесплатно' : fee + ' ₽'}</span>
+    </div>
+    <div class="cart-total" style="border-top:2px solid var(--green);padding-top:12px">
+      <span>Итого:</span><span>${cartTotal() + fee} ₽</span>
+    </div>
+    <button class="primary-btn" onclick="goToOrder()">Оформить заказ</button>
+  `;
+  el.innerHTML = html;
+}
+
+// ── Panels ─────────────────────────────────────
+function openPanel(id) {
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById(id).classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('overlay').classList.remove('open');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
+}
+
+function goToOrder() {
+  closePanel();
+  setTimeout(() => openPanel('orderPanel'), 200);
+}
+
+function backToCart() {
+  closePanel();
+  setTimeout(() => { renderCart(); openPanel('cartPanel'); }, 200);
+}
+
+// ── Submit order ───────────────────────────────
+async function submitOrder() {
+  const name = document.getElementById('fName').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const village = document.getElementById('fVillage').value;
+  const address = document.getElementById('fAddress').value.trim();
+  const comment = document.getElementById('fComment').value.trim();
+
+  if (!name || !phone || !village || !address) {
+    alert('Пожалуйста, заполните все обязательные поля');
+    return;
+  }
+
+  const items = Object.entries(cart).map(([product_id, quantity]) => ({ product_id, quantity }));
+
+  const res = await fetch(`${API}/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items, customer_name: name, phone, village, address, comment }),
+  });
+
+  if (!res.ok) {
+    alert('Ошибка при создании заказа');
+    return;
+  }
+
+  const order = await res.json();
+  showSuccess(order);
+  cart = {};
+  updateBadge();
+  renderProducts();
+}
+
+function showSuccess(order) {
+  const fee = deliveryFee();
+  const el = document.getElementById('successContent');
+  el.innerHTML = `
+    <div class="big-emoji">✅</div>
+    <h2>Заказ принят!</h2>
+    <p style="color:#777">Номер заказа: <strong>#${order.id}</strong></p>
+
+    <div class="order-info-box">
+      <p><strong>Доставка:</strong> ${order.village}, ${order.address}</p>
+      <p><strong>Получатель:</strong> ${order.customer_name}</p>
+      <p><strong>Телефон:</strong> ${order.phone}</p>
+      <p><strong>Сумма:</strong> ${order.total} ₽ + доставка ${fee === 0 ? 'бесплатно' : fee + ' ₽'}</p>
+      <p><strong>Ориентировочно:</strong> ${order.estimated_delivery}</p>
+      ${order.comment ? `<p><strong>Комментарий:</strong> ${order.comment}</p>` : ''}
+    </div>
+
+    <div class="status-track">
+      <div class="status-step active"><div class="status-dot">📝</div><span>Принят</span></div>
+      <div class="status-step"><div class="status-dot">✅</div><span>Подтверждён</span></div>
+      <div class="status-step"><div class="status-dot">📦</div><span>Собирается</span></div>
+      <div class="status-step"><div class="status-dot">🚚</div><span>В пути</span></div>
+      <div class="status-step"><div class="status-dot">🏠</div><span>Доставлен</span></div>
+    </div>
+
+    <button class="primary-btn" onclick="closePanel(); closePanel();">Продолжить покупки</button>
+  `;
+  closePanel();
+  setTimeout(() => openPanel('successPanel'), 200);
+}
+
+// ── Init ───────────────────────────────────────
+loadCategories();
+loadProducts();
+</script>
+</body>
+</html>
