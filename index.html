@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СелоМаркет — Доставка в село</title>
+<style>
+:root{--green:#2e7d32;--green-light:#4caf50;--green-bg:#e8f5e9;--orange:#ef6c00;--orange-light:#fff3e0;--gray:#f5f5f5;--dark:#212121;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--gray);color:var(--dark);min-height:100vh}
+header{background:linear-gradient(135deg,var(--green),#1b5e20);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+header h1{font-size:1.3rem}
+header small{opacity:.85;font-size:.8rem}
+.header-row{display:flex;justify-content:space-between;align-items:center}
+.cart-btn{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:1.4rem;padding:8px 14px;border-radius:var(--radius);cursor:pointer;position:relative;transition:background .2s}
+.cart-btn:hover{background:rgba(255,255,255,.35)}
+.cart-badge{position:absolute;top:-4px;right:-4px;background:var(--orange);color:#fff;font-size:.7rem;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+.delivery-banner{background:var(--orange-light);border-left:4px solid var(--orange);margin:12px 16px;padding:10px 14px;border-radius:0 var(--radius) var(--radius) 0;font-size:.85rem}
+.delivery-banner strong{color:var(--orange)}
+.categories{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;-webkit-overflow-scrolling:touch}
+.categories::-webkit-scrollbar{display:none}
+.cat-chip{white-space:nowrap;padding:8px 16px;border-radius:20px;border:1.5px solid #ccc;background:#fff;font-size:.85rem;cursor:pointer;transition:all .2s;flex-shrink:0}
+.cat-chip.active{background:var(--green);color:#fff;border-color:var(--green)}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:0 16px 100px}
+.product-card{background:#fff;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .15s}
+.product-card:active{transform:scale(.97)}
+.product-emoji{font-size:2.5rem;text-align:center;padding:10px 0}
+.product-name{font-weight:600;font-size:.9rem;margin-bottom:4px}
+.product-desc{font-size:.75rem;color:#777;margin-bottom:8px;flex:1}
+.product-bottom{display:flex;justify-content:space-between;align-items:center}
+.product-price{font-weight:700;color:var(--green);font-size:1rem}
+.product-unit{font-size:.75rem;color:#999}
+.add-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--green);color:#fff;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.add-btn:hover{background:var(--green-light)}
+.qty-controls{display:flex;align-items:center;gap:6px}
+.qty-controls button{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--green);background:#fff;color:var(--green);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.qty-controls span{font-weight:700;font-size:.95rem;min-width:20px;text-align:center}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none}
+.overlay.open{display:block}
+.panel{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;max-height:85vh;overflow-y:auto;z-index:201;transform:translateY(100%);transition:transform .3s ease;padding:20px 16px 30px}
+.panel.open{transform:translateY(0)}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.panel-header h2{font-size:1.2rem}
+.close-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#999}
+.cart-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #eee}
+.cart-item-emoji{font-size:1.5rem}
+.cart-item-info{flex:1}
+.cart-item-name{font-weight:600;font-size:.9rem}
+.cart-item-price{font-size:.8rem;color:#777}
+.cart-item-total{font-weight:700;color:var(--green)}
+.cart-total{display:flex;justify-content:space-between;align-items:center;padding:16px 0;font-size:1.1rem;font-weight:700}
+.cart-total span:last-child{color:var(--green);font-size:1.3rem}
+.empty-cart{text-align:center;padding:30px 0;color:#999}
+.empty-cart .big-emoji{font-size:3rem}
+.order-form{display:flex;flex-direction:column;gap:12px}
+.order-form label{font-size:.85rem;font-weight:600;margin-bottom:2px}
+.order-form input,.order-form select,.order-form textarea{padding:12px;border:1.5px solid #ddd;border-radius:var(--radius);font-size:.95rem;font-family:inherit;width:100%;transition:border-color .2s}
+.order-form input:focus,.order-form select:focus,.order-form textarea:focus{outline:none;border-color:var(--green)}
+.primary-btn{width:100%;padding:14px;border:none;border-radius:var(--radius);background:var(--green);color:#fff;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s}
+.primary-btn:hover{background:var(--green-light)}
+.primary-btn:disabled{background:#ccc;cursor:default}
+.secondary-btn{width:100%;padding:12px;border:2px solid var(--green);border-radius:var(--radius);background:#fff;color:var(--green);font-size:.95rem;font-weight:600;cursor:pointer;margin-top:8px}
+.success-panel{text-align:center;padding:20px 0}
+.success-panel .big-emoji{font-size:4rem;margin-bottom:12px}
+.success-panel h2{color:var(--green);margin-bottom:8px}
+.order-info-box{background:var(--green-bg);border-radius:var(--radius);padding:14px;margin:16px 0;text-align:left;font-size:.9rem}
+.order-info-box p{margin:6px 0}
+.order-info-box strong{color:var(--green)}
+.status-track{display:flex;justify-content:space-between;margin:20px 0;position:relative}
+.status-track::before{content:'';position:absolute;top:15px;left:10%;right:10%;height:3px;background:#ddd}
+.status-step{display:flex;flex-direction:column;align-items:center;z-index:1;font-size:.7rem;color:#999;gap:6px}
+.status-dot{width:30px;height:30px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+.status-step.active .status-dot{background:var(--green)}
+.status-step.active{color:var(--green);font-weight:600}
+.search-box{margin:0 16px 8px;position:relative}
+.search-box input{width:100%;padding:10px 14px 10px 38px;border:1.5px solid #ddd;border-radius:var(--radius);font-size:.9rem;background:#fff}
+.search-box input:focus{outline:none;border-color:var(--green)}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:.9rem}
+</style>
+</head>
+<body>
+<header>
+<div class="header-row">
+<div><h1>&#127793; СелоМаркет</h1><small>Доставка продуктов в ваше село</small></div>
+<button class="cart-btn" onclick="openCart()">&#128722;<span class="cart-badge" id="cartBadge" style="display:none">0</span></button>
+</div>
+</header>
+<div class="delivery-banner"><strong>&#128666; Доставка:</strong> ежедневно с 10:00 до 18:00 &#8226; бесплатно от 500 &#8381; &#8226; иначе 150 &#8381;</div>
+<div class="search-box"><span class="search-icon">&#128269;</span><input type="text" id="searchInput" placeholder="Найти товар..." oninput="filterProducts()"></div>
+<div class="categories" id="categories"></div>
+<div class="products" id="productsGrid"></div>
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="cartPanel"><div class="panel-header"><h2>&#128722; Корзина</h2><button class="close-btn" onclick="closePanel()">&#215;</button></div><div id="cartContent"></div></div>
+<div class="panel" id="orderPanel"><div class="panel-header"><h2>&#128203; Оформление заказа</h2><button class="close-btn" onclick="closePanel()">&#215;</button></div>
+<div class="order-form" id="orderForm">
+<div><label>Имя</label><input type="text" id="fName" placeholder="Иван Петрович"></div>
+<div><label>Телефон</label><input type="tel" id="fPhone" placeholder="+7 900 123-45-67"></div>
+<div><label>Село / деревня</label><select id="fVillage"><option value="">Выберите населённый пункт</option><option>с. Берёзовка</option><option>д. Сосновка</option><option>с. Луговое</option><option>д. Речная</option><option>с. Ольховка</option><option>п. Зелёный Бор</option><option>д. Подгорная</option><option>с. Кузнецово</option></select></div>
+<div><label>Адрес (улица, дом)</label><input type="text" id="fAddress" placeholder="ул. Центральная, д. 5"></div>
+<div><label>Комментарий</label><textarea id="fComment" rows="2" placeholder="Позвоните заранее..."></textarea></div>
+<button class="primary-btn" onclick="submitOrder()">Отправить заказ</button>
+<button class="secondary-btn" onclick="backToCart()">&#8592; Назад к корзине</button>
+</div></div>
+<div class="panel" id="successPanel"><div class="success-panel" id="successContent"></div></div>
+<script>
+var products=[];var cart={};var activeCategory=null;
+var PRODUCTS=[
+{id:"p1",name:"Хлеб белый",category:"bread",price:45,unit:"шт",image:"\uD83C\uDF5E",description:"Свежий белый хлеб, 500 г"},
+{id:"p2",name:"Хлеб ржаной",category:"bread",price:55,unit:"шт",image:"\uD83C\uDF5E",description:"Ржаной хлеб, 600 г"},
+{id:"p3",name:"Молоко 3.2%",category:"dairy",price:89,unit:"л",image:"\uD83E\uDD5B",description:"Молоко пастеризованное, 1 л"},
+{id:"p4",name:"Сметана 20%",category:"dairy",price:75,unit:"шт",image:"\uD83E\uDD5B",description:"Сметана, 300 г"},
+{id:"p5",name:"Творог 9%",category:"dairy",price:120,unit:"шт",image:"\uD83E\uDDC0",description:"Творог домашний, 400 г"},
+{id:"p6",name:"Масло сливочное",category:"dairy",price:160,unit:"шт",image:"\uD83E\uDDC8",description:"Масло 82.5%, 200 г"},
+{id:"p7",name:"Сахар",category:"grocery",price:65,unit:"кг",image:"\uD83C\uDF6C",description:"Сахар-песок, 1 кг"},
+{id:"p8",name:"Мука пшеничная",category:"grocery",price:70,unit:"кг",image:"\uD83C\uDF3E",description:"Мука в/с, 2 кг"},
+{id:"p9",name:"Масло подсолнечное",category:"grocery",price:140,unit:"л",image:"\uD83E\uDED2",description:"Масло рафинированное, 1 л"},
+{id:"p10",name:"Крупа гречневая",category:"grocery",price:95,unit:"кг",image:"\uD83C\uDF3E",description:"Гречка, 900 г"},
+{id:"p11",name:"Рис",category:"grocery",price:85,unit:"кг",image:"\uD83C\uDF5A",description:"Рис круглозёрный, 900 г"},
+{id:"p12",name:"Макароны",category:"grocery",price:60,unit:"шт",image:"\uD83C\uDF5D",description:"Макароны перья, 450 г"},
+{id:"p13",name:"Курица (бедро)",category:"meat",price:250,unit:"кг",image:"\uD83C\uDF57",description:"Бедро куриное, охлаждённое"},
+{id:"p14",name:"Фарш свино-говяжий",category:"meat",price:380,unit:"кг",image:"\uD83E\uDD69",description:"Фарш домашний"},
+{id:"p15",name:"Сосиски молочные",category:"meat",price:220,unit:"кг",image:"\uD83C\uDF2D",description:"Сосиски, 500 г"},
+{id:"p16",name:"Картофель",category:"vegetables",price:35,unit:"кг",image:"\uD83E\uDD54",description:"Картофель свежий"},
+{id:"p17",name:"Морковь",category:"vegetables",price:40,unit:"кг",image:"\uD83E\uDD55",description:"Морковь мытая"},
+{id:"p18",name:"Лук репчатый",category:"vegetables",price:30,unit:"кг",image:"\uD83E\uDDC5",description:"Лук жёлтый"},
+{id:"p19",name:"Капуста белокочанная",category:"vegetables",price:28,unit:"кг",image:"\uD83E\uDD6C",description:"Капуста свежая"},
+{id:"p20",name:"Чай чёрный",category:"drinks",price:110,unit:"шт",image:"\uD83C\uDF75",description:"Чай пакетированный, 100 шт"},
+{id:"p21",name:"Вода питьевая",category:"drinks",price:50,unit:"л",image:"\uD83D\uDCA7",description:"Вода негазированная, 5 л"},
+{id:"p22",name:"Средство для посуды",category:"household",price:95,unit:"шт",image:"\uD83E\uDDF4",description:"Средство для мытья посуды, 500 мл"},
+{id:"p23",name:"Стиральный порошок",category:"household",price:250,unit:"шт",image:"\uD83E\uDDF9",description:"Порошок автомат, 3 кг"},
+{id:"p24",name:"Спички",category:"household",price:10,unit:"шт",image:"\uD83D\uDD25",description:"Спички бытовые, 10 коробков"}
+];
+var CATEGORIES=[
+{value:"bread",label:"Хлеб",icon:"\uD83C\uDF5E"},{value:"dairy",label:"Молочные",icon:"\uD83E\uDD5B"},
+{value:"grocery",label:"Бакалея",icon:"\uD83C\uDF3E"},{value:"meat",label:"Мясо",icon:"\uD83C\uDF57"},
+{value:"vegetables",label:"Овощи",icon:"\uD83E\uDD6C"},{value:"drinks",label:"Напитки",icon:"\uD83C\uDF75"},
+{value:"household",label:"Хозтовары",icon:"\uD83E\uDDF9"}
+];
+function init(){products=PRODUCTS;var el=document.getElementById("categories");el.innerHTML='<div class="cat-chip active" onclick="selectCategory(null,this)">Все</div>'+CATEGORIES.map(function(c){return'<div class="cat-chip" onclick="selectCategory(\''+c.value+"',this)\">"+c.icon+" "+c.label+"</div>"}).join("");renderProducts()}
+function selectCategory(cat,chip){activeCategory=cat;document.querySelectorAll(".cat-chip").forEach(function(c){c.classList.remove("active")});chip.classList.add("active");renderProducts()}
+function filterProducts(){renderProducts()}
+function renderProducts(){var search=document.getElementById("searchInput").value.toLowerCase();var grid=document.getElementById("productsGrid");var items=products;if(activeCategory)items=items.filter(function(p){return p.category===activeCategory});if(search)items=items.filter(function(p){return p.name.toLowerCase().indexOf(search)!==-1||p.description.toLowerCase().indexOf(search)!==-1});grid.innerHTML=items.map(function(p){var qty=cart[p.id]||0;return'<div class="product-card"><div class="product-emoji">'+p.image+'</div><div class="product-name">'+p.name+'</div><div class="product-desc">'+p.description+'</div><div class="product-bottom"><div><div class="product-price">'+p.price+' \u20BD</div><div class="product-unit">за '+p.unit+"</div></div>"+(qty===0?'<button class="add-btn" onclick="addToCart(\''+p.id+"')\">+</button>":'<div class="qty-controls"><button onclick="changeQty(\''+p.id+"',-1)\">\u2212</button><span>"+qty+'</span><button onclick="changeQty(\''+p.id+"',1)\">+</button></div>")+"</div></div>"}).join("")}
+function addToCart(id){cart[id]=(cart[id]||0)+1;updateBadge();renderProducts()}
+function changeQty(id,d){cart[id]=(cart[id]||0)+d;if(cart[id]<=0)delete cart[id];updateBadge();renderProducts();if(document.getElementById("cartPanel").classList.contains("open"))renderCart()}
+function updateBadge(){var t=0;for(var k in cart)t+=cart[k];var b=document.getElementById("cartBadge");b.textContent=t;b.style.display=t>0?"flex":"none"}
+function cartTotal(){var s=0;for(var id in cart){var p=products.find(function(x){return x.id===id});if(p)s+=p.price*cart[id]}return s}
+function deliveryFee(){return cartTotal()>=500?0:150}
+function openCart(){renderCart();openPanel("cartPanel")}
+function renderCart(){var el=document.getElementById("cartContent");var ids=Object.keys(cart);if(!ids.length){el.innerHTML='<div class="empty-cart"><div class="big-emoji">\uD83D\uDED2</div><p>Корзина пуста</p><p style="font-size:.85rem;margin-top:8px">Добавьте товары из каталога</p></div>';return}var html="";ids.forEach(function(id){var p=products.find(function(x){return x.id===id});if(!p)return;var qty=cart[id];html+='<div class="cart-item"><div class="cart-item-emoji">'+p.image+'</div><div class="cart-item-info"><div class="cart-item-name">'+p.name+'</div><div class="cart-item-price">'+p.price+" \u20BD \u00D7 "+qty+'</div></div><div class="qty-controls"><button onclick="changeQty(\''+p.id+"',-1)\">\u2212</button><span>"+qty+'</span><button onclick="changeQty(\''+p.id+"',1)\">+</button></div>"+'<div class="cart-item-total">'+p.price*qty+" \u20BD</div></div>"});var fee=deliveryFee();html+='<div class="cart-total"><span>Товары:</span><span>'+cartTotal()+" \u20BD</span></div>";html+='<div style="display:flex;justify-content:space-between;font-size:.9rem;color:#777;margin-bottom:4px"><span>Доставка:</span><span>'+(fee===0?"Бесплатно":fee+" \u20BD")+"</span></div>";html+='<div class="cart-total" style="border-top:2px solid var(--green);padding-top:12px"><span>Итого:</span><span>'+(cartTotal()+fee)+" \u20BD</span></div>";html+='<button class="primary-btn" onclick="goToOrder()">Оформить заказ</button>';el.innerHTML=html}
+function openPanel(id){document.getElementById("overlay").classList.add("open");document.getElementById(id).classList.add("open")}
+function closePanel(){document.getElementById("overlay").classList.remove("open");document.querySelectorAll(".panel").forEach(function(p){p.classList.remove("open")})}
+function goToOrder(){closePanel();setTimeout(function(){openPanel("orderPanel")},200)}
+function backToCart(){closePanel();setTimeout(function(){renderCart();openPanel("cartPanel")},200)}
+function submitOrder(){var name=document.getElementById("fName").value.trim();var phone=document.getElementById("fPhone").value.trim();var village=document.getElementById("fVillage").value;var address=document.getElementById("fAddress").value.trim();var comment=document.getElementById("fComment").value.trim();if(!name||!phone||!village||!address){alert("Пожалуйста, заполните все обязательные поля");return}var items=[];for(var pid in cart)items.push({product_id:pid,quantity:cart[pid]});var total=0;items.forEach(function(item){var p=products.find(function(x){return x.id===item.product_id});if(p)total+=p.price*item.quantity});var now=new Date();var delivery=new Date(now.getTime()+3*3600000);var order={id:Math.random().toString(36).slice(2,10),items:items,customer_name:name,phone:phone,village:village,address:address,comment:comment,status:"new",total:Math.round(total*100)/100,created_at:now.toISOString(),estimated_delivery:delivery.toLocaleString("ru-RU")};showSuccess(order);cart={};updateBadge();renderProducts()}
+function showSuccess(order){var fee=deliveryFee();var el=document.getElementById("successContent");el.innerHTML='<div class="big-emoji">\u2705</div><h2>Заказ принят!</h2><p style="color:#777">Номер заказа: <strong>#'+order.id+"</strong></p>"+'<div class="order-info-box"><p><strong>Доставка:</strong> '+order.village+", "+order.address+"</p><p><strong>Получатель:</strong> "+order.customer_name+"</p><p><strong>Телефон:</strong> "+order.phone+"</p><p><strong>Сумма:</strong> "+order.total+" \u20BD + доставка "+(fee===0?"бесплатно":fee+" \u20BD")+"</p><p><strong>Ориентировочно:</strong> "+order.estimated_delivery+"</p>"+(order.comment?"<p><strong>Комментарий:</strong> "+order.comment+"</p>":"")+"</div>"+'<div class="status-track"><div class="status-step active"><div class="status-dot">\uD83D\uDCDD</div><span>Принят</span></div><div class="status-step"><div class="status-dot">\u2705</div><span>Подтверждён</span></div><div class="status-step"><div class="status-dot">\uD83D\uDCE6</div><span>Собирается</span></div><div class="status-step"><div class="status-dot">\uD83D\uDE9A</div><span>В пути</span></div><div class="status-step"><div class="status-dot">\uD83C\uDFE0</div><span>Доставлен</span></div></div>'+'<button class="primary-btn" onclick="closePanel()">Продолжить покупки</button>';closePanel();setTimeout(function(){openPanel("successPanel")},200)}
+init();
+</script>
+</body>
+</html>
